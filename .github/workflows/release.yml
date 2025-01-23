@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '10.0.0'
+  VERSION: '10.1.0'
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -36,14 +36,14 @@ jobs:
 
             ### 新的功能
             1. **修复小米 14 之后机型 fastboot 无法刷入 super 的问题**
-            2. **调整 super 的额外空间大小**：super 的额外空间大小调整为200MB，不再为1GB。
+            2. **调整 super 的额外空间大小**：super 的额外空间大小调整为125MB，不再为1GB。
             3. **警告**：所有 Android 15 涉及 Apktool 的修改会导致开机异常，现在不要使用与 Apktool 修改有关的内容，建议使用 MT 管理器修改。
 
             ## Release Notes
 
             ### New Features
             1. **Fixed fastboot flashing issue for super on Xiaomi 14 and later models**
-            2. **Adjusted extra space size for super**: The extra space size for super has been adjusted to 200MB, no longer 1GB.
+            2. **Adjusted extra space size for super**: The extra space size for super has been adjusted to 125MB, no longer 1GB.
             3. **Warning**: All modifications involving Apktool on Android 15 will cause boot issues. Avoid using Apktool-related modifications for now; consider using MT Manager for modifications.
 
       - name: Archive project
