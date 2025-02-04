@@ -49,7 +49,27 @@ function update_config_files {
 				echo "$relative_path 0 0 $mode" >>"$temp_fs_config_file"
 			fi
 		fi
+		
+		escaped_path=$(echo "$relative_path" | sed -e 's/[+.\\[()（）]/\\&/g' -e 's/]/\\]/g')
+		# 确定源分区类型
+		case "$partition" in
+		"system_dlkm")
+			source_partition="system_dlkm"
+			;;
+		"product")
+			source_partition="system"
+			;;
+		"odm" | "vendor_dlkm")
+			source_partition="vendor"
+			;;
+		*)
+			source_partition="$partition"
+			;;
+		esac
 
+		if ! grep -Fq "/$escaped_path " "$temp_file_contexts_file"; then
+			echo "/$escaped_path u:object_r:${source_partition}_file:s0" >>"$temp_file_contexts_file"
+		fi
 	done
 
 	if ! grep -Fq "${partition}/lost+found " "$temp_fs_config_file"; then

@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '10.1.0'
+  VERSION: '10.2.0'
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -38,6 +38,8 @@ jobs:
             1. **修复小米 14 之后机型 fastboot 无法刷入 super 的问题**
             2. **调整 super 的额外空间大小**：super 的额外空间大小调整为125MB，不再为1GB。
             3. **警告**：所有 Android 15 涉及 Apktool 的修改会导致开机异常，现在不要使用与 Apktool 修改有关的内容，建议使用 MT 管理器修改。
+            4. 修复了小米15或一加13刷入不开机？
+            5. 修复了 selinux 上下文未更新
 
             ## Release Notes
 
@@ -45,6 +47,8 @@ jobs:
             1. **Fixed fastboot flashing issue for super on Xiaomi 14 and later models**
             2. **Adjusted extra space size for super**: The extra space size for super has been adjusted to 125MB, no longer 1GB.
             3. **Warning**: All modifications involving Apktool on Android 15 will cause boot issues. Avoid using Apktool-related modifications for now; consider using MT Manager for modifications.
+            4. Fixed the problem that Xiaomi Mi 15 or OnePlus 13 cannot boot after flashing?
+            5. Fixed selinux context not updating
 
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .

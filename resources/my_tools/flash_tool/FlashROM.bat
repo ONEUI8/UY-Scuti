@@ -144,6 +144,11 @@ goto HOME&pause
 cls 
 echo.
 
+REM 看起来像新机型要求？
+if "!DynamicPartitionType!" == "NonOnlyA" (
+    fastboot set_active a %sg%
+)
+
 REM 对 vbmeta 分区文件专门刷入
 set "count=0"
 for /R "images\" %%i in (*.img) do (
