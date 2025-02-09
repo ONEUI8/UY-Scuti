@@ -5,7 +5,7 @@
 使用该工具在 WSL2 和 Ubuntu 测试均可使用，安装所需要的包：
 
 **sudo apt update** \
-**sudo apt install lz4 python3 openjdk-21-jdk device-tree-compiler**
+**sudo apt install lz4 python3 default-jdk device-tree-compiler**
 
 
 其它 Linux 内核系统待测试，推测都能正常工作，为工具给予权限：
@@ -62,8 +62,8 @@
 
 ## 一键修改介绍（仅关键功能）
 
-1. **HyperOS / ONEUI 替换**  
-   - 功能说明：该功能允许你替换系统分区中的任意文件或文件夹。你需要找到 `resources/my_tools/nice_rom/bin/samsun(xiaomi)/replace` 目录，并按以下步骤操作：
+1. ** XXXX 替换**  
+   - 功能说明：该功能允许你替换系统分区中的任意文件或文件夹。你需要找到 `resources/my_tools/nice_rom/bin/ (samsung|xiaomi|oneplus) /replace` 目录，并按以下步骤操作：
      - 假设你提取了系统分区中的某个文件（例如命名为 `1` 文件）。
      - 将这个文件（或文件夹）放入 `replace` 目录。
      - 使用该功能后，`replace` 目录中的 `1` 文件（或文件夹）将替换系统分区中同名的文件（或文件夹）。
@@ -77,8 +77,8 @@
    - 该目录下有 `app`、`data-app` 和 `priv-app` 等子目录。
    - 你可以将 APK 文件添加到这些目录中的任意位置，只需按照命名规则操作：
      - 例如：如果你想将 `1.apk` 添加到 `product/app` 目录：
-       - 创建 `resources/my_tools/nice_rom/bin/xiaomi/add_for_product/app/file_locked_1` 目录。
-       - 将 `Only_1.apk` 放入 `file_locked_1` 目录中。
+       - 创建 `resources/my_tools/nice_rom/bin/xiaomi/add_for_product/app/1` 目录。
+       - 将 `1.apk` 放入 `1` 目录中。
      - 该功能会将 APK 文件添加到目标目录。
      - **注意**：该功能仅适用于 Product 分区，且 `data-app` 目录中的 APK 文件是可卸载的。
 
