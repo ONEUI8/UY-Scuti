@@ -76,8 +76,9 @@ def main():
         os.makedirs(output_dir)
     with open(context_output_path, "w") as f:
         for path, context in file_contexts.items():
-            escaped_path = re.escape(path)
-            f.write(f"/{prefix}{escaped_path} {context.decode('utf8', errors='replace').strip().replace('\x00', '')}\n")
+            escaped_path = re.escape(path) 
+            context_str = context.decode('utf8', errors='replace').strip().replace('\x00', '')
+            f.write(f"/{prefix}{escaped_path} {context_str}\n")
     with open(config_output_path, "w") as f:
         for path, owner, group, mode, capabilities, link_target in fs_config:
             output = f"{prefix}{path} {owner} {group} 0{mode:o} {capabilities} {link_target}"
