@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '11.1.0'  # Update version number to 11
+  VERSION: '12.0.0'  # Update version number to 12
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -35,32 +35,18 @@ jobs:
             ## 更新内容
 
             ### 新的功能
-            1. **对重编译的 apk 进行 zipalign 优化以保证开机能够正确识别，这是一个修复的问题**
-            2. **对 Joyose 不再提供移除选项，而是修改以禁用云端控制**
-            3. **新增基于包名的应用删除功能，同时保有基于文件名称的删除逻辑**
-            4. **android 15 依赖 apktool 的修改新增临时修复方案以解决修改引起的电源键异常问题**
-            5. **payload 提取工具更新，速度提升应该有大约40%**
-            6. **新增反向移除功能，默认移除所有 apk 选项，排除你不想要移除的 apk**
-            7. **特性添加功能分解：对于 HyperOS，为 "小米智能卡支持" "高级材质支持"，而 ONEUI，为 "添加网速显示" "添加通话录音" "添加相机静音"**
-            8. **为 HyperOS 新增的修改选项 "GMS 及时推送" "禁用 Joyose 云控" "禁用 Html 查看器云控" "移除相册" "移除文件管理器" "移除智能密码管理"**
-            9. **新增对 ColorOS 的支持**
-            10. **大量移除功能调整为基于包名的新逻辑，旧逻辑仍然适配**
-            11. **为三星修复 optics.img 打包失败的问题**  # New log entry
+            1. **快速替换逻辑调整，找到 resources/my_tools/nice_rom/quick-replace，然后建立任意文件夹，每个文件夹视为一个分组，在分组内放置同名文件或者文件夹，便会替换**
+            2. **vbmeta 校验移除改进，现在，在小米 14 之后的任何小米机型必须修改 vbmeta，否则会不开机，在之前只需 fastboot 刷入时禁用即可，现在在小米新机型中不再有任何效果**
+            3. **移除应用大部分修改为基于包名**
+            4. **修改 apk 的功能已被隐藏，由于 apktool 不修复，你只能手动通过 MT 管理器修改 apk，但是你可以参考这些修改的代码，它们还在，只是不调用**
 
             ## Release Notes
 
             ### New Features
-            1. **Zipalign optimization for recompiled APKs to ensure correct boot recognition; this is a fix.**
-            2. **Removal option for Joyose is no longer provided; instead, it is modified to disable cloud control.**
-            3. **New package name-based application deletion feature, while retaining the file name-based deletion logic.**
-            4. **Temporary fix for power button issues caused by modifications involving Apktool on Android 15.**
-            5. **Payload extraction tool updated, with speed improvements of about 40%.**
-            6. **New reverse removal feature, defaulting to remove all APK options, excluding those you do not want to remove.**
-            7. **Feature addition breakdown: For HyperOS, "Xiaomi Smart Card Support" and "Advanced Material Support"; for ONEUI, "Add Network Speed Display," "Add Call Recording," "Add Camera Mute."**
-            8. **New modification options for HyperOS: "GMS Timely Push," "Disable Joyose Cloud Control," "Disable HTML Viewer Cloud Control," "Remove Gallery," "Remove File Manager," "Remove Smart Password Manager."**
-            9. **Added support for ColorOS.**
-            10. **Many removal features adjusted to a new package name-based logic, while the old logic remains compatible.**
-            11. **Fixed packaging failure of optics.img for Samsung.**  # New log entry
+            1. **Adjustment of quick replace logic: Find `resources/my_tools/nice_rom/quick-replace`, then create any folder. Each folder is treated as a group, and placing files or folders with the same name within the group will result in replacement.**
+            2. **Improvement in vbmeta verification removal: Now, for any Xiaomi model after Xiaomi 14, vbmeta must be modified; otherwise, it will not boot. Previously, it was sufficient to disable it during fastboot flashing, but this is no longer effective on new Xiaomi models.**
+            3. **Most application removals have been modified to be based on package names.**
+            4. **The functionality to modify APKs has been hidden. Due to the lack of fixes in apktool, you can only manually modify APKs using MT Manager. However, you can refer to the modification codes, which are still present but not invoked.**
 
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .
