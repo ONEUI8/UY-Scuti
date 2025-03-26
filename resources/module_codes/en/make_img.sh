@@ -58,9 +58,9 @@ function package_single_partition {
 		size=$(du -sb "$dir" | cut -f1)
 
 		if [ "$size" -lt $((1 * 1024 * 1024)) ]; then
-			size=$((2 * 1024 * 1024))
+			size=$((15 * 1024 * 1024))
 		else
-			size=$((size * 11 / 10))
+			size=$((size * 101 / 100 + 4 * 1024 * 1024))
 		fi
 
 		echo "Packing partition $(basename "$dir") ..."
