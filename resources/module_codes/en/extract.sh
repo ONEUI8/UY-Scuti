@@ -60,6 +60,10 @@ function extract_single_img {
 	ext)
 		echo "Extracting partition ${single_file_name}, please wait..."
 		PYTHONDONTWRITEBYTECODE=1 python3 "$TOOL_DIR/ext4_info_get.py" "$single_file" "$WORK_DIR/$current_workspace/Extracted-files/config"
+		partition_size=$(stat -c%s "$single_file")
+		
+		mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/config"
+		echo "$partition_size" > "$WORK_DIR/$current_workspace/Extracted-files/config/original_${base_name}_size_for_ext4"
 		mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/${base_name}"
 		echo "rdump / \"$WORK_DIR/${current_workspace}/Extracted-files/${base_name}\"" | sudo debugfs "$single_file" >/dev/null 2>&1
 		sudo chmod -R a+rwx "$WORK_DIR/$current_workspace/Extracted-files/${base_name}"

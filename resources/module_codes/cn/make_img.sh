@@ -55,12 +55,13 @@ function package_single_partition {
 		fs_type="ext4"
 		mke2fs_tool_path="$(dirname "$0")/resources/my_tools/mke2fs"
 		e2fsdroid_tool_path="$(dirname "$0")/resources/my_tools/e2fsdroid"
-		size=$(du -sb "$dir" | cut -f1)
-
-		if [ "$size" -lt $((1 * 1024 * 1024)) ]; then
-			size=$((15 * 1024 * 1024))
+		size_file="$WORK_DIR/$current_workspace/Extracted-files/config/original_$(basename "$dir")_size_for_ext4"
+		
+		if [ -f "$size_file" ]; then
+			size=$(cat "$size_file")
 		else
-			size=$((size * 101 / 100 + 4 * 1024 * 1024))
+			size=$(du -sb "$dir" | cut -f1)
+			size=$((size * 102 / 100))
 		fi
 
 		echo "正在打包分区 $(basename "$dir") ..."
