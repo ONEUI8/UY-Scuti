@@ -6,7 +6,12 @@ for script in "$(dirname "$0")/resources/module_codes/cn"/*.sh \
 	source "$script"
 done
 source "$(dirname "$0")/resources/my_tools/nice_rom/NiceRom.sh"
-
+super_sub-partitions_list="my_.*\.img|\
+mi_ext\.img|\
+odm\.img|odm_dlkm\.img|\
+product\.img|\
+system\.img|system_dlkm\.img|system_ext\.img|\
+vendor\.img|vendor_dlkm\.img"
 # 定义工具和工作目录的路径
 TOOL_DIR="$(dirname "$0")/resources/my_tools"
 WORK_DIR="$(dirname "$0")/my_workspaces"

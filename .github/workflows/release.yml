@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '12.2.0'  # Update version number to 12
+  VERSION: '12.9.0' 
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -39,7 +39,11 @@ jobs:
             2. **vbmeta 校验移除改进，现在，在小米 14 之后的任何小米机型必须修改 vbmeta，否则会不开机，在之前只需 fastboot 刷入时禁用即可，现在在小米新机型中不再有任何效果**
             3. **移除应用大部分修改为基于包名**
             4. **修改 apk 的功能已被隐藏，由于 apktool 不修复，你只能手动通过 MT 管理器修改 apk，但是你可以参考这些修改的代码，它们还在，只是不调用**
-            5. ext4 格式打包现在默认会保持原始大小了，如果你原本镜像提取从ext格式提取，那么便会保留原始大小，同时再次打包ext4时优先采取原始大小，如果没有，则动态计算
+            5. **ext4 格式打包现在默认会保持原始大小了，如果你原本镜像提取从 ext 格式提取，那么便会保留原始大小，同时再次打包 ext4 时优先采取原始大小，如果没有，则动态计算**
+            6. **提取分区与 super 打包功能增加多选，空格分隔（提取功能的多选后续添加）**
+            7. **super 打包不再提供固定值**
+            8. **f2fs 支持保持原始大小了，如果原始大小无法打包，则使用动态计算值**
+            9. **提取分区和 super 打包列表会显示相应的文件或者目录大小（提取功能的大小显示后续添加）**
 
             ## Release Notes
 
@@ -48,7 +52,11 @@ jobs:
             2. **Improvement in vbmeta verification removal: Now, for any Xiaomi model after Xiaomi 14, vbmeta must be modified; otherwise, it will not boot. Previously, it was sufficient to disable it during fastboot flashing, but this is no longer effective on new Xiaomi models.**
             3. **Most application removals have been modified to be based on package names.**
             4. **The functionality to modify APKs has been hidden. Due to the lack of fixes in apktool, you can only manually modify APKs using MT Manager. However, you can refer to the modification codes, which are still present but not invoked.**
-            5. The ext4 format packaging now retains the original size by default. If you originally extracted the image from the ext format, the original size will be retained. At the same time, the original size will be given priority when packaging ext4 again. If not, it will be dynamically calculated
+            5. **The ext4 format packaging now retains the original size by default. If you originally extracted the image from the ext format, the original size will be retained. At the same time, the original size will be given priority when packaging ext4 again. If not, it will be dynamically calculated.**
+            6. **Extraction and super packaging features now support multi-selection, separated by spaces (multi-selection for extraction will be added later).**
+            7. **Super packaging will no longer provide fixed values.**
+            8. **F2FS now supports retaining the original size; if the original size cannot be packaged, a dynamic calculated value will be used.**
+            9. **The extraction and super packaging lists will display the corresponding file or directory sizes (size display for extraction will be added later).**
 
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .
