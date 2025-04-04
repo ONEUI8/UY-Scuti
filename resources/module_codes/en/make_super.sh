@@ -206,7 +206,7 @@ function package_super_image {
 	mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/super"
 	detected_files=()
 	for file in "$WORK_DIR/$current_workspace/Repacked/"*; do
-		if [[ -f "$file" && $(basename "$file") =~ ^($super_sub-partitions_list)$ ]]; then
+		if [[ -f "$file" && $(basename "$file") =~ ^($super_sub_partitions_list)$ ]]; then
 			detected_files+=("$file")
 		fi
 	done
@@ -250,7 +250,7 @@ function package_super_image {
 	forbidden_files=()
 	for file in "${real_img_files[@]}"; do
 		filename=$(basename "$file")
-		if ! [[ "$filename" =~ ^($super_sub-partitions_list)$ ]]; then
+		if ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
 			forbidden_files+=("$file")
 		fi
 	done

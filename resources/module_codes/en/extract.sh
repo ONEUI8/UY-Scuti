@@ -45,7 +45,7 @@ function extract_single_img {
 			matching_imgs=()
 			for img in "$WORK_DIR/$current_workspace"/*.img; do
 				img_name=$(basename "$img")
-				if [[ "$img_name" =~ ^($super_sub-partitions_list)$ ]]; then
+				if [[ "$img_name" =~ ^($super_sub_partitions_list)$ ]]; then
 					matching_imgs+=("$img")
 				fi
 			done
@@ -285,11 +285,11 @@ function extract_img {
 					for file in "$WORK_DIR/$current_workspace"/*.{img,elf,melf,mbn,bin,fv,pit}; do
 						filename=$(basename "$file")
 						if [ -f "$WORK_DIR/$current_workspace/optics.img" ]; then
-							if [ "$filename" != "super.img" ] && [[ "$filename" != vbmeta*.img ]] && [[ "$filename" != "optics.img" ]] && ! [[ "$filename" =~ ^($super_sub-partitions_list)$ ]]; then
+							if [ "$filename" != "super.img" ] && [[ "$filename" != vbmeta*.img ]] && [[ "$filename" != "optics.img" ]] && ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
 								mv -f "$file" "$WORK_DIR/$current_workspace/Ready-to-flash/images/" 2>/dev/null
 							fi
 						else
-							if [ "$filename" != "super.img" ] && ! [[ "$filename" =~ ^($super_sub-partitions_list)$ ]]; then
+							if [ "$filename" != "super.img" ] && ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
 								mv -f "$file" "$WORK_DIR/$current_workspace/Ready-to-flash/images/" 2>/dev/null
 							fi
 						fi

@@ -6,7 +6,7 @@ for script in "$(dirname "$0")/resources/module_codes/en"/*.sh \
 	source "$script"
 done
 source "$(dirname "$0")/resources/my_tools/nice_rom/NiceRom_en.sh"
-super_sub-partitions_list="my_.*\.img|\
+super_sub_partitions_list="my_.*\.img|\
 mi_ext\.img|\
 odm\.img|odm_dlkm\.img|\
 product\.img|\
