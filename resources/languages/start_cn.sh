@@ -5,7 +5,7 @@ for script in "$(dirname "$0")/resources/module_codes/cn"/*.sh \
 	"$(dirname "$0")/resources/module_codes/general"/*.sh; do
 	source "$script"
 done
-source "$(dirname "$0")/resources/my_tools/nice_rom/NiceRom.sh"
+source "$(dirname "$0")/resources/my_tools/nice_rom/only_modify.sh"
 super_sub_partitions_list="my_.*\.img|\
 mi_ext\.img|\
 odm\.img|odm_dlkm\.img|\
