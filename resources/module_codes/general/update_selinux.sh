@@ -2,32 +2,29 @@ function update_config_files {
 	local partition="$1"
 	local fs_config_file="$WORK_DIR/$current_workspace/Extracted-files/config/${partition}_fs_config"
 	local file_contexts_file="$WORK_DIR/$current_workspace/Extracted-files/config/${partition}_file_contexts"
-
 	local temp_fs_config_file="$fs_config_file.tmp"
 	local temp_file_contexts_file="$file_contexts_file.tmp"
-
 	cat "$fs_config_file" >>"$temp_fs_config_file"
 	cat "$file_contexts_file" >>"$temp_file_contexts_file"
-
 	case "$partition" in
 	"system_dlkm")
-		source_partition="system_dlkm"
+		source_partition="system_dlkm_file"
 		;;
 	"product")
-		source_partition="system"
+		source_partition="system_file"
 		;;
 	"odm" | "vendor_dlkm")
-		source_partition="vendor"
+		source_partition="vendor_file"
 		;;
 	*)
-		source_partition="$partition"
+		source_partition="${partition}_file"
 		;;
 	esac
-
 	find "$WORK_DIR/$current_workspace/Extracted-files/$partition" -type f -o -type d -o -type l | while read -r file; do
 		relative_path="${file#$WORK_DIR/$current_workspace/Extracted-files/}"
-
-		if ! grep -Fq "$relative_path " "$temp_fs_config_file"; then
+		escaped_path=$(echo "$relative_path" | sed -e 's/[+.\\[()（）]/\\&/g' -e 's/]/\\]/g')
+		escaped_path_for_grep=$(echo "$escaped_path" | sed 's/\\/\\\\\\/g')
+		if ! grep -Eq "^$escaped_path\s" "$temp_fs_config_file"; then
 			if [ -d "$file" ]; then
 				echo "$relative_path 0 0 0755" >>"$temp_fs_config_file"
 			elif [ -L "$file" ]; then
@@ -56,38 +53,27 @@ function update_config_files {
 				echo "$relative_path 0 0 $mode" >>"$temp_fs_config_file"
 			fi
 		fi
-
-		escaped_path=$(echo "$relative_path" | sed -e 's/[+.\\[()（）]/\\&/g' -e 's/]/\\]/g')
-
-		if ! grep -Fq "^/$escaped_path " "$temp_file_contexts_file"; then
-			echo "/$escaped_path u:object_r:${source_partition}_file:s0" >>"$temp_file_contexts_file"
+		if ! grep -Eq "^/$escaped_path_for_grep\s.*" "$temp_file_contexts_file"; then
+			echo "/$escaped_path u:object_r:${source_partition}:s0" >>"$temp_file_contexts_file"
 		fi
-
 	done
-
-	for fs_config_fixed in "${partition}/lost+found" "lost+found"; do
-		if ! grep -Fq "^${fs_config_fixed} " "$temp_fs_config_file"; then
+	for fs_config_fixed in "lost+found" "${partition}" "/"; do
+		if ! grep -Eq "^${fs_config_fixed//+/\\+}\s" "$temp_fs_config_file"; then
 			echo "${fs_config_fixed} 0 0 0755" >>"$temp_fs_config_file"
 		fi
 	done
-
-	for file_contexts_fixed in "/${partition}/lost+found" "/lost+found" "/${partition}/"; do
-		if ! grep -Fq "^${file_contexts_fixed} " "$temp_file_contexts_file"; then
-			echo "${file_contexts_fixed} u:object_r:${source_partition}_file:s0" >>"$temp_file_contexts_file"
+	for file_contexts_fixed in  "/${partition}" "/${partition}(/.*)?" "/"; do
+		fixed_path=$(echo "$file_contexts_fixed" | sed 's/\\/\\\\/g; s/(/\\(/g; s/)/\\)/g; s/\./\\./g; s/\*/\\*/g; s/?/\\?/g; s/+/\\+/g')
+		if ! grep -Eq "^${fixed_path}\s.*" "$temp_file_contexts_file"; then
+			if [ "$partition" = "system" ]; then
+				echo "${file_contexts_fixed} u:object_r:rootfs:s0" >>"$temp_file_contexts_file"
+			else
+				echo "${file_contexts_fixed} u:object_r:${source_partition}:s0" >>"$temp_file_contexts_file"
+			fi
 		fi
 	done
-
-	sed -i "/\/${partition}(\/.*)? /d" "$temp_file_contexts_file"
-
-	if [[ "$fs_type_choice" == 2 ]]; then
-		if ! grep -Fq "/${partition}(/.*)? " "$temp_file_contexts_file"; then
-			echo "/${partition}(/.*)? u:object_r:${source_partition}_file:s0" >>"$temp_file_contexts_file"
-		fi
-	fi
-
 	mv "$temp_fs_config_file" "$fs_config_file"
 	mv "$temp_file_contexts_file" "$file_contexts_file"
-
 	sort "$fs_config_file" -o "$fs_config_file"
 	sort "$file_contexts_file" -o "$file_contexts_file"
 }
