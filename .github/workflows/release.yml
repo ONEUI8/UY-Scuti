@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '12.9.4' 
+  VERSION: '12.9.5' 
 jobs: 
   build: 
     runs-on: ubuntu-latest

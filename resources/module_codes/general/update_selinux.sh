@@ -7,6 +7,9 @@ function update_config_files {
 	cat "$fs_config_file" >>"$temp_fs_config_file"
 	cat "$file_contexts_file" >>"$temp_file_contexts_file"
 	case "$partition" in
+	"system")
+		source_partition="rootfs"
+		;;
 	"system_dlkm")
 		source_partition="system_dlkm_file"
 		;;
