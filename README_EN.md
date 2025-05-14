@@ -62,7 +62,7 @@ If you are using this tool for the first time, you must carefully read the instr
 ## One-Click Modification Introduction (Key Features Only)
 
 1. **Quick Replace**  
-   - Function Description: This feature allows you to quickly replace any file or folder in the system partition. You need to find the `resources/my_tools/nice_rom/quick-replace` directory and follow these steps:
+   - Function Description: This feature allows you to quickly replace any file or folder in the system partition. You need to find the `use-replace` directory and follow these steps:
      - Place the files (or folders) to be replaced into the corresponding group folder.
      - Each folder corresponds to a group, and the tool will automatically replace based on the group.
      - Since apktool cannot correctly handle APKs starting from Android 15 (which can cause boot recognition issues), you need to manually modify the APK using MT Manager and place it in the corresponding group.
@@ -85,12 +85,6 @@ If you are using this tool for the first time, you must carefully read the instr
    - The operation is similar to HyperOS, but this feature is applicable to the System partition of Samsung devices.
    - For Samsung devices, uninstallable APK files will be placed in the `preload` directory.
 
-3. **Add ONEUI Features**  
-   - Function Description: This feature needs to be used after extracting the contents of the `optics.img` partition.
-   - Operation Method: Add Samsung ONEUI features by automatically decoding the CSC file.
-   - Operation Path: `resources/my_tools/nice_rom/bin/samsung/csc_add/csc_features_need`
-   - Place the features you wish to add into this directory.
-
 ---
 
 <br>
@@ -100,27 +94,64 @@ If you are using this tool for the first time, you must carefully read the instr
 <br>
 <br>
 
-## HyperOS Modification Tutorial (Tested)
-1. Create a new working domain and select it immediately.
-2. Move the ROM package or partition files into the working domain directory; you need to extract them once.
-3. Use simple recognition to automatically filter out SUPER sub-partitions, but before using this function, ensure that all IMG format files have been extracted, and then use all extraction to further extract the contents of the partition files.
-4. Use one-click modification. Note: If you want to use a modified APK that retains the original signature, you must use the modification that removes unsigned verification; otherwise, it will not load on Android 13 (due to Google's changes). If you want to boot correctly on Xiaomi 14 and later models, you must remove AVB2.0 verification. Before removal, extract the vbmeta-related IMG, including all related keywords.
-5. Pack all extracted partition files; the packing file system depends on your kernel.
-6. Move the packed sub-partitions into the selected working domain's Extracted-files/super directory.
-7. Use the SUPER packing function, ensuring the packed dynamic partition is consistent with your device; the size will be automatically calculated based on prompts.
-8. Move the packed SUPER partition to the selected working domain's Ready-to-flash/images directory. Note that "simple recognition" has automatically moved other partitions to this location!
-9. Use the Fastboot(d) packing function to complete the modification of the ROM.
+**HyperOS Modification Tutorial**
 
-## OneUI Modification Tutorial (Untested)
-1. Create a new working domain and select it immediately.
-2. Move the ROM package or partition files into the working domain directory; you need to extract them once.
-3. Use simple recognition to automatically filter out SUPER sub-partitions, but before using this function, ensure that all IMG format files have been extracted, and then use all extraction to further extract the contents of the partition files.
-4. Use one-click modification. Note: If you want to use a modified APK that retains the original signature, you must use the modification that removes unsigned verification; otherwise, it will not load on Android 13 (due to Google's changes). Before removal, extract the vbmeta-related IMG; removing vbmeta verification is necessary.
-5. Pack all extracted partition files; the packing file system depends on your kernel.
-6. Move the packed sub-partitions into the selected working domain's Extracted-files/super directory.
-7. Use the SUPER packing function; for Samsung devices, the packed SUPER partition file must maintain the same size as the official version.
-8. Move the packed SUPER partition to the selected working domain's Ready-to-flash/images directory. Note that "simple recognition" has automatically moved other partitions to this location!
-9. Use the Odin ROM packing function to complete the modification of the Samsung ROM, but whether it can boot needs to be tested.
+1. **Create a new workspace** and select it immediately.
+2. **Move the ROM package or partition image files** into the workspace directory, then perform an initial extraction.
+3. **Use the “Quick Detect” feature** to auto-filter out the SUPER sub-partition.
+
+   * Before running this, make sure all `.img` files have been extracted.
+   * Then use “Extract All” to fully unpack the contents of each partition file.
+4. **Run the one-click modifier**.
+
+   * If you need to modify APKs **while preserving their original signatures**, you must choose the “Remove Unsigned-Verification” option—otherwise on Android 13 they won’t load due to Google’s changes.
+   * To boot correctly on Xiaomi 14 and newer devices, you must remove AVB 2.0 verification. Before doing so, extract all `vbmeta`-related `.img` files (i.e. those whose names contain “vbmeta”).
+5. **Re-package all extracted partition files**—the filesystem format depends on your kernel.
+6. **Move the re-packed sub-partitions** into `Extracted-files/super` within your selected workspace.
+7. **Use the SUPER pack function**, ensuring that the dynamic partitions match your device; sizes will be calculated automatically—follow the on-screen prompts.
+8. **Move the newly packed SUPER partition** into `Ready-to-flash/images` in your workspace (note: “Quick Detect” will have already relocated the other partitions).
+9. **Use the Fastboot(d) pack function**—your modified ROM is now ready to flash.
+
+---
+
+**One UI Modification Tutorial**
+
+1. **Create a new workspace** and select it immediately.
+2. **Move the ROM package or partition image files** into the workspace directory, then perform an initial extraction.
+3. **Use the “Quick Detect” feature** to auto-filter out the SUPER sub-partition.
+
+   * Ensure all `.img` files are extracted before running this.
+   * Then use “Extract All” to fully unpack each partition.
+4. **Run the one-click modifier**.
+
+   * To keep APKs signed with their original certificates, select “Remove Unsigned-Verification”—otherwise on Android 13 they won’t load.
+   * Before removing vbmeta verification, extract all `vbmeta` `.img` files.
+5. **Re-package all extracted partitions**—filesystem depends on your kernel.
+6. **Move the re-packed sub-partitions** into `Extracted-files/super` in your workspace.
+7. **Use the SUPER pack function**—for Samsung devices, the packed SUPER partition must remain the same size as the official image.
+8. **Move the packed SUPER partition** into `Ready-to-flash/images` (the other partitions will have been auto-moved).
+9. **Use the Odin ROM pack function**—the modified Samsung ROM is built, though you’ll need to test whether it boots successfully.
+
+---
+
+**ColorOS Modification Tutorial**
+
+1. **Create a new workspace** and select it immediately.
+2. **Move the ROM package or partition image files** into the workspace directory, then perform an initial extraction.
+3. **Use the “Quick Detect” feature** to auto-filter out the SUPER sub-partition.
+
+   * Make sure all `.img` files are extracted first.
+   * Then run “Extract All” to unpack every partition.
+4. **Run the one-click modifier**.
+
+   * To preserve original APK signatures, choose “Remove Unsigned-Verification”—without this, APKs won’t load on Android 13.
+   * Extract all `vbmeta` `.img` files before removing vbmeta verification.
+5. **Re-package all extracted partitions**—filesystem format depends on your kernel.
+6. **Move the re-packed sub-partitions** into `Extracted-files/super` in your workspace.
+7. **Use the SUPER pack function**.
+8. **Move the packed SUPER partition** into `Ready-to-flash/images` (other partitions have been auto-moved).
+9. **Use the Odin ROM pack function**—your modified ColorOS ROM is complete; boot success must be verified by testing.
+
 
 <br><br><br>
 

@@ -1,10 +1,9 @@
 #!/bin/bash
 apktool_path="$(dirname "$0")/bin/all/apktool/apktool.jar"
 zipalign_path="$(dirname "$0")/bin/all/zipalign/zipalign"
-
 remove_extra_vbmeta_verification() {
 	declare -A printed_files
-	find "$onepath" -type f -name 'fstab.qcom' -print0 | while IFS= read -r -d '' file; do
+	find "$onepath" -type f -name 'fstab.*' -print0 | while IFS= read -r -d '' file; do
 		sed -i 's/avb[^,]*,//g' "$file"
 		sed -i 's/,avb[^,]*,//g' "$file"
 		sed -i 's/,avb[^,]*$//g' "$file"
@@ -14,7 +13,6 @@ remove_extra_vbmeta_verification() {
 		fi
 	done
 }
-
 remove_vbmeta_verification() {
 	find "$onepath" -type f \( -name 'vbmeta*.avb.json' -o -name 'vendor_boot.avb.json' \) -print0 | while IFS= read -r -d '' file; do
 		sed -i '/^[[:space:]]*"authBlob" : {/,/}/c\
@@ -54,9 +52,8 @@ $next_line\\
 		done
 	done
 }
-
 replace_files() {
-	local quick_replace_dir="$(dirname "$0")/quick-replace"
+	local quick_replace_dir="$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")")/use-replace"
 	echo "Available replacement directories:"
 	local -a available_dirs
 	i=1
@@ -69,7 +66,7 @@ replace_files() {
 		fi
 	done
 	echo
-	read -p "Please select the baseline target to use (multiple options separated by space): " choices
+	read -p "Please select base targets to use (multiple selections separated by spaces): " choices
 	local -a selected_indices=()
 	for choice in $choices; do
 		if ! [[ "$choice" =~ ^[0-9]+$ ]] || ((choice < 1)) || ((choice > ${#available_dirs[@]})); then
@@ -104,7 +101,6 @@ replace_files() {
 		done < <(find "$onepath" -type d -not -path "$quick_replace_dir/*" -print0)
 	done
 }
-
 remove_hyperos_settings_name_check() {
 	declare -a settings_apk_paths
 	while IFS= read -r -d '' settings_apk_path; do
@@ -148,7 +144,6 @@ remove_hyperos_settings_name_check() {
 		rm -rf "${settings_apk_path%.apk}"
 	done
 }
-
 remove_hyperos_hotspot_name_restore() {
 	declare -a wifi_service_jar_paths
 	while IFS= read -r -d '' wifi_service_jar_path; do
@@ -172,7 +167,6 @@ remove_hyperos_hotspot_name_restore() {
 		rm -rf "${wifi_service_jar_path%.jar}"
 	done
 }
-
 add_camera_mute_feature() {
 	decode_csc >/dev/null 2>&1
 	find "$onepath" -name "cscfeature_decoded.xml" -print0 | while IFS= read -r -d $'\0' file; do
@@ -189,12 +183,12 @@ add_camera_mute_feature() {
 		fi
 		if $modified; then
 			echo "$content" >"$file"
+			echo "Added camera mute feature"
 			echo "$file"
 		fi
 	done
 	encode_csc >/dev/null 2>&1
 }
-
 add_call_recording_feature() {
 	decode_csc >/dev/null 2>&1
 	find "$onepath" -name "cscfeature_decoded.xml" -print0 | while IFS= read -r -d $'\0' file; do
@@ -216,12 +210,12 @@ add_call_recording_feature() {
 		fi
 		if $modified; then
 			echo "$content" >"$file"
+			echo "Added call recording feature"
 			echo "$file"
 		fi
 	done
 	encode_csc >/dev/null 2>&1
 }
-
 add_network_speed_feature() {
 	decode_csc >/dev/null 2>&1
 	find "$onepath" -name "cscfeature_decoded.xml" -print0 | while IFS= read -r -d $'\0' file; do
@@ -232,11 +226,11 @@ add_network_speed_feature() {
 		content=$(echo "$content" | sed '/<FeatureSet>/a \
     <CscFeature_Setting_SupportRealTimeNetworkSpeed>TRUE</CscFeature_Setting_SupportRealTimeNetworkSpeed>')
 		echo "$content" >"$file"
+		echo "Added network speed display feature"
 		echo "$file"
 	done
 	encode_csc >/dev/null 2>&1
 }
-
 allow_control_all_notifications() {
 	while IFS= read -r -d '' jarfile; do
 		if [[ -f "$jarfile" ]]; then
@@ -254,7 +248,6 @@ allow_control_all_notifications() {
 		fi
 	done < <(find "$onepath" -name "services.jar" -print0)
 }
-
 advanced_material_support() {
 	while IFS= read -r -d '' file; do
 		parent_dir=$(basename "$(dirname "$file")")
@@ -263,28 +256,29 @@ advanced_material_support() {
 			grep -q "^persist.sys.background_blur_status_default=true$" "$file" || echo "persist.sys.background_blur_status_default=true" >>"$file"
 			grep -q "^persist.sys.background_blur_mode=0$" "$file" || echo "persist.sys.background_blur_mode=0" >>"$file"
 			grep -q "^persist.sys.background_blur_version=2$" "$file" || echo "persist.sys.background_blur_version=2" >>"$file"
+			echo "Added advanced material support: $file"
 		fi
 	done < <(find "$onepath" -type f -name "build.prop" -print0)
 }
-
 xiaomi_smart_card_support() {
 	while IFS= read -r -d '' file; do
 		parent_dir=$(basename "$(dirname "$file")")
 		if [[ "$parent_dir" == "vendor" ]]; then
 			if ! grep -q "^ro.vendor.se.type=HCE,UICC,eSE$" "$file"; then
 				echo "ro.vendor.se.type=HCE,UICC,eSE" >>"$file"
+				echo "Added Xiaomi smart card support: $file"
+			else
+				echo "File already contains target line: $file"
 			fi
 		fi
 	done < <(find "$onepath" -type f -name "build.prop" -print0)
 }
-
 update_build_props() {
 	declare -A lines_to_add=(
 		[vendor]="ro.vendor.audio.sfx.scenario=true"
 		[product]="persist.sys.miui_animator_sched.sched_threads=2 persist.vendor.display.miui.composer_boost=4-7"
 	)
 }
-
 disable_html_viewer_cloud_control() {
 	while IFS= read -r -d '' apk_path; do
 		apk_dir="${apk_path%.apk}"
@@ -296,6 +290,7 @@ disable_html_viewer_cloud_control() {
 	.registers 1\n\
 	return-void\n\
 .end method' "$smali_file"
+				echo "$smali_file"
 			fi
 		done
 		java -jar "$apktool_path" b -f -c "$apk_dir" -o "$apk_path"
@@ -304,7 +299,6 @@ disable_html_viewer_cloud_control() {
 		rm -rf "$apk_dir"
 	done < <(find "$onepath" -name "HTMLViewer.apk" -print0)
 }
-
 disable_joyose_cloud_control() {
 	while IFS= read -r -d '' apk_path; do
 		apk_dir="${apk_path%.apk}"
@@ -361,7 +355,6 @@ disable_joyose_cloud_control() {
 		rm -rf "$apk_dir"
 	done < <(find "$onepath" -name "Joyose.apk" -print0)
 }
-
 GMS_instant_push() {
 	while IFS= read -r -d '' apk_path; do
 		apk_dir="${apk_path%.apk}"
@@ -369,6 +362,7 @@ GMS_instant_push() {
 		find "$apk_dir" -name "MilletPolicy.smali" -print0 | while IFS= read -r -d '' smali_file; do
 			if [[ "$smali_file" == *"MilletPolicy.smali" ]]; then
 				sed -i 's/com\.google\.android\.gms/com.google.android.gms.keeplive/g' "$smali_file"
+				echo "$smali_file"
 			fi
 		done
 		temporary_fix_invoke_custom
@@ -378,7 +372,6 @@ GMS_instant_push() {
 		rm -rf "$apk_dir"
 	done < <(find "$onepath" -name "PowerKeeper.apk" -print0)
 }
-
 temporary_fix_invoke_custom() {
 	find "$onepath" -name "*.smali" -print0 | xargs -0 -n 1 -P "$(nproc)" bash -c '
         file="$1"
@@ -413,13 +406,11 @@ temporary_fix_invoke_custom() {
         '"'"' "$file"
     ' _
 }
-
 search_package_name() {
 	search_package_name_tool="$(dirname "$0")/bin/all/search_package_name/pnget"
 	mkdir -p "$onepath/Extracted-files/config"
 	"$search_package_name_tool" -dir "$onepath" -data "$onepath/Extracted-files/config/nice.list" >/dev/null 2>&1
 }
-
 remove_packages() {
 	local package_list="$onepath/Extracted-files/config/nice.list"
 	local packages_to_remove=("$@")
@@ -430,9 +421,11 @@ remove_packages() {
 				for path in "${path_array[@]}"; do
 					(
 						if [[ "$path" == *.capex || "$path" == *.apex ]]; then
+							echo "$path"
 							rm -f "$path"
 						else
 							parent_dir=$(dirname "$path")
+							echo "$parent_dir"
 							rm -rf "$parent_dir"
 						fi
 					) &
@@ -442,7 +435,6 @@ remove_packages() {
 		done
 	done <"$package_list"
 }
-
 remove_all() {
 	for opt in "${options_order[@]}"; do
 		IFS=' ' read -r -a items <<<"${options[$opt]}"
@@ -455,7 +447,6 @@ remove_all() {
 		done
 	done
 }
-
 remove_files() {
 	local exclude_files=("1" "2")
 	local exclude_string=""
@@ -467,32 +458,33 @@ remove_files() {
 			if [[ -d "$path" ]]; then
 				base_name=$(basename "$path")
 				if find "$path" -name "$base_name.apk" | grep -q .; then
+					echo "$path"
 					rm -rf "$path"
 				fi
 			elif [[ -f "$path" ]]; then
+				echo "$path"
 				rm -f "$path"
 			fi
 		done < <(find "$onepath" \( -type d -name "$file" $exclude_string -o -type f -name "$file" \) -print0)
 	done
 }
-
 prevent_theme_reversion() {
 	while IFS= read -r -d '' jarfile; do
 		if [[ -f "$jarfile" ]]; then
 			java -jar "$apktool_path" d -f "$jarfile" -o "${jarfile%.jar}"
 			temporary_fix_invoke_custom
 			while IFS= read -r -d '' smali_file; do
+				echo "$smali_file"
 				sed -i '/invoke-static {.*}, Lmiui\/drm\/DrmManager;->isLegal(Landroid\/content\/Context;Ljava\/io\/File;Ljava\/io\/File;)Lmiui\/drm\/DrmManager$DrmResult;/,/move-result-object [a-z0-9]*/{
           s/invoke-static {.*}, Lmiui\/drm\/DrmManager;->isLegal(Landroid\/content\/Context;Ljava\/io\/File;Ljava\/io\/File;)Lmiui\/drm\/DrmManager$DrmResult;//
           s/move-result-object \([a-z0-9]*\)/sget-object \1, Lmiui\/drm\/DrmManager\$DrmResult;->DRM_SUCCESS:Lmiui\/drm\/DrmManager\$DrmResult;/
         }' "$smali_file"
 			done < <(find "${jarfile%.jar}" -name "ThemeReceiver.smali" -print0)
-			java -jar "$apktool_path" b -api 29 -c -f "${jarfile%.jar}" -o "$jarfile"
+			java -jar "$apktool_path" -api 29 -c -f "${jarfile%.jar}" -o "$jarfile"
 			rm -rf "${jarfile%.jar}"
 		fi
 	done < <(find "$onepath" -name "miui-framework.jar" -print0)
 }
-
 invoke_native_installer() {
 	while IFS= read -r -d '' jarfile; do
 		if [[ -f "$jarfile" ]]; then
@@ -500,6 +492,7 @@ invoke_native_installer() {
 			temporary_fix_invoke_custom
 			while IFS= read -r -d '' smali_file; do
 				if [[ "$smali_file" == *"PackageManagerServiceImpl.smali" ]]; then
+					echo "$smali_file"
 					sed -i '/.method public checkGTSSpecAppOptMode()V/,/.end method/c\
 .method public checkGTSSpecAppOptMode()V\n\
     .registers 1\n\
@@ -520,7 +513,6 @@ invoke_native_installer() {
 	echo "Removed:"
 	remove_files "MIUIPackageInstaller"
 }
-
 remove_unsigned_app_verification() {
 	while IFS= read -r -d '' jarfile; do
 		java -jar "$apktool_path" d -f -r "$jarfile" -o "${jarfile%.jar}"
@@ -531,13 +523,13 @@ remove_unsigned_app_verification() {
           s/invoke-static {.*}, Landroid\/util\/apk\/ApkSignatureVerifier;->getMinimumSignatureSchemeVersionForTargetSdk(I)I//
           s/move-result \([a-z0-9]*\)/const\/4 \1, 0x1/
         }' "$smali_file"
+				echo "$smali_file"
 			fi
 		done < <(find "${jarfile%.jar}" -name '*.smali' -print0)
 		java -jar "$apktool_path" b -c -f "${jarfile%.jar}" -o "$jarfile"
 		rm -rf "${jarfile%.jar}"
 	done < <(find "$onepath" -name "services.jar" -print0)
 }
-
 copy_dirs() {
 	local brand=$1
 	local script_dir=$(dirname "$(readlink -f "$0")")
@@ -556,9 +548,11 @@ copy_dirs() {
 				for dir in "${!dirs[@]}"; do
 					cp -r "$source_dir"/* "$system_dir/"
 				done
+				echo "Applied to System directory"
 				for file in "$source_dir"/*/*/*; do
 					current_dir=$(basename "$(dirname "$file")")
 					parent_dir=$(basename "$(dirname "$(dirname "$file")")")
+					echo "$parent_dir/$current_dir"
 				done
 			fi
 		done
@@ -577,9 +571,11 @@ copy_dirs() {
 				for dir in "${!dirs[@]}"; do
 					cp -r "$source_dir"/* "$product_dir/"
 				done
+				echo "Applied to Product directory"
 				for file in "$source_dir"/*/*/*; do
 					current_dir=$(basename "$(dirname "$file")")
 					parent_dir=$(basename "$(dirname "$(dirname "$file")")")
+					echo "$parent_dir/$current_dir"
 				done
 			fi
 		done
@@ -588,28 +584,29 @@ copy_dirs() {
 		return 1
 	fi
 }
-
 decode_csc() {
 	local script_dir=$(dirname "$0")
 	local omc_decoder_path="$script_dir/bin/samsung/csc_tool/omc-decoder.jar"
 	local files=("cscfeature.xml" "customer_carrier_feature.json")
 	for file in "${files[@]}"; do
 		while IFS= read -r -d '' filepath; do
+			echo "Decoding $file ..."
 			output_file="${filepath%.*}_decoded.${filepath##*.}"
 			java -jar "$omc_decoder_path" -i "$filepath" -o "$output_file"
 			if [ $? -eq 0 ]; then
+				echo "Decoding $file completed"
 				rm "$filepath"
 			fi
 		done < <(find "$onepath" -name "$file" -print0)
 	done
 }
-
 encode_csc() {
 	local script_dir=$(dirname "$0")
 	local omc_decoder_path="$script_dir/bin/samsung/csc_tool/omc-decoder.jar"
 	local files=("cscfeature_decoded.xml" "customer_carrier_feature_decoded.json")
 	for file in "${files[@]}"; do
 		while IFS= read -r -d '' filepath; do
+			echo "Encoding $file ..."
 			output_file="${filepath/_decoded/}"
 			java -jar "$omc_decoder_path" -e -i "$filepath" -o "$output_file"
 			if [ $? -eq 0 ]; then
@@ -618,10 +615,9 @@ encode_csc() {
 		done < <(find "$onepath" -name "$file" -print0)
 	done
 }
-
 deodex() {
 	local found=false
-	local exclude_files=("example")
+	local exclude_files=("boot-framework.art" "boot-framework.oat" "boot-framework.vdex")
 	local exclude_string=""
 	for exclude in "${exclude_files[@]}"; do
 		exclude_string+=" -not -iname $exclude"
@@ -629,28 +625,29 @@ deodex() {
 	for file in "oat" "*.art" "*.oat" "*.vdex" "*.odex" "*.fsv_meta" "*.bprof" "*.prof"; do
 		if find "$onepath" -name "$file" $exclude_string -print0 | xargs -0 | grep -q .; then
 			if [ "$found" = false ]; then
+				echo "Removal list:"
 				found=true
 			fi
-			find "$onepath" -name "$file" $exclude_string -print0 | xargs -0 -I {} sh -c 'rm -rf "{}"'
+			find "$onepath" -name "$file" $exclude_string -print0 | xargs -0 -I {} sh -c 'echo "{}"; rm -rf "{}"'
 		fi
 	done
 	if [ "$found" = false ]; then
-		echo "No files related to odex to remove"
+		echo "No odex related files to remove"
 	fi
 }
-
 deodex_key_files() {
 	local found=false
 	local files=("services.*" "miui-services.*" "miui-framework.*" "miui-wifi-service.*")
 	for file in "${files[@]}"; do
 		if find "$onepath" -name "$file" -not -name "*.jar" -print0 | xargs -0 | grep -q .; then
 			if [ "$found" = false ]; then
+				echo "Critical removal list:"
 				found=true
 			fi
-			find "$onepath" -name "$file" -not -name "*.jar" -print0 | xargs -0 -I {} sh -c 'rm -rf "{}"'
+			find "$onepath" -name "$file" -not -name "*.jar" -print0 | xargs -0 -I {} sh -c 'echo "{}"; rm -rf "{}"'
 		fi
 	done
 	if [ "$found" = false ]; then
-		echo "No related files to remove"
+		echo "No relevant files to remove"
 	fi
 }
