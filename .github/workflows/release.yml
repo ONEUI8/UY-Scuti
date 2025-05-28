@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '13.0.1' 
+  VERSION: '13.1'  # 更新版本号
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -41,6 +41,7 @@ jobs:
             5. 提示：ONEUI 特性添加已经移除，现在变成更直观的修改选项。  
             6. ColorOS 已添加较多精简列表应用。  
             7. 教程更新。
+            8. 刷入脚本优化：对谷歌帐号未退出登录时的处理，以及修改 UTF-8 时不工作，以及 MTK 分区的刷入调整。
 
             ## Release Notes
 
@@ -51,6 +52,8 @@ jobs:
             5. Note: ONEUI feature additions have been removed and replaced with more intuitive modification options.  
             6. Many streamlined list apps have been added to ColorOS.  
             7. Tutorial updated.
+            8. Script optimization for flashing: handling cases where the Google account is not logged out and fixes for UTF-8 not working, along with adjustments for MTK partition flashing.
+
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .
         
@@ -64,4 +67,3 @@ jobs:
           asset_path: ./UY-Sct_${{ env.VERSION }}.zip
           asset_name: UY-Sct_${{ env.VERSION }}.zip
           asset_content_type: application/zip
-
