@@ -1,0 +1,186 @@
+#!/sbin/sh
+
+# 1. 自动检测语言环境，优先中文
+lang=$(getprop persist.sys.language)
+locale=$(getprop persist.sys.locale)
+[ -z "$lang" ] && lang=$(getprop ro.product.locale.language)
+[ -z "$lang" ] && lang=$(getprop ro.product.locale | cut -d'-' -f1)
+[ -z "$lang" ] && lang=$(getprop sys.locale | cut -d'_' -f1)
+
+if echo "$lang$locale" | grep -qi '^zh'; then
+  IS_ZH=1
+else
+  IS_ZH=0
+fi
+
+# 2. 根据语言只定义一套消息变量
+if [ "$IS_ZH" = 1 ]; then
+  MSG_SCRIPT_TITLE="Recovery 刷机脚本"
+  MSG_POWERED_BY="由 Android 驱动"
+  MSG_MODEL_ERROR="机型效验不通过！"
+  MSG_MODEL_ONLY="此包仅可供 %s 刷入，而你的设备是 %s"
+  MSG_ABORT="终止程序！"
+  MSG_DISABLE_MODULES_Q="- 是否禁用模块？"
+  MSG_DISABLE_MODULES_DO="- 禁用模块"
+  MSG_DISABLE_ONE="- 正在禁用 %s"
+  MSG_FLASH_START="- 开始刷机"
+  MSG_FILE_NOT_FOUND="- 文件  %s  不存在于 zip 文件中，跳过刷写"
+  MSG_FLASHING="- 正在刷写分区 %s"
+  MSG_FLASHED_A="- 成功刷入 %s_a"
+  MSG_FLASHED_B="- 成功刷入 %s_b"
+  MSG_FLASHED="- 成功刷入 %s"
+  MSG_LISTEN_KEY="- 监听音量键 按[+]是Y 按[-]是N"
+  MSG_CLEAN_CACHE="- 清除缓存"
+  MSG_DONE="- 刷入操作执行完成"
+else
+  MSG_SCRIPT_TITLE="Recovery Flash Script"
+  MSG_POWERED_BY="Powered By Android"
+  MSG_MODEL_ERROR="Device model check failed!"
+  MSG_MODEL_ONLY="This package is for %s only, but your device is %s."
+  MSG_ABORT="Aborting installation!"
+  MSG_DISABLE_MODULES_Q="- Disable all Magisk modules?"
+  MSG_DISABLE_MODULES_DO="- Disabling modules"
+  MSG_DISABLE_ONE="- Disabling %s"
+  MSG_FLASH_START="- Start flashing"
+  MSG_FILE_NOT_FOUND="- File %s not found in zip, skip flashing"
+  MSG_FLASHING="- Flashing partition %s"
+  MSG_FLASHED_A="- Flashed %s_a successfully"
+  MSG_FLASHED_B="- Flashed %s_b successfully"
+  MSG_FLASHED="- Flashed %s successfully"
+  MSG_LISTEN_KEY="- Press Volume Up for YES, Volume Down for NO"
+  MSG_CLEAN_CACHE="- Clearing cache"
+  MSG_DONE="- Flashing completed"
+fi
+
+# 3. 定义输出文件描述符和 zip 包路径
+OUTFD=/proc/self/fd/$2
+ZIPF="$3"
+
+# 4. 简单 ui_print，只输出单一变量
+ui_print() {
+  echo -e "ui_print $1\nui_print" >>$OUTFD
+  echo -e "\n" >>$OUTFD
+}
+
+# 5. 解压 img 文件并刷写到指定分区
+unzip_and_flash_file() {
+  # $1: ZIP包内img文件路径  $2: 目标分区设备节点
+  if ! unzip -l "$ZIPF" | grep -q $1; then
+    ui_print "$(printf "$MSG_FILE_NOT_FOUND" "$1")"
+    return
+  fi
+
+  ui_print "$(printf "$MSG_FLASHING" "$(basename $2)")"
+
+  base=$(basename $2)
+  # 对A/B分区（有slot_suffix）同时刷写_a/_b，否则只刷写本分区
+  if [ "$base" != "cust" ] && [ "$base" != "super" ] && [ -e $2$(getprop ro.boot.slot_suffix) ] && [ "$(getprop ro.boot.slot_suffix)" != "" ]; then
+    unzip -p "$ZIPF" $1 >${2}_a
+    ui_print "$(printf "$MSG_FLASHED_A" "$base")"
+    unzip -p "$ZIPF" $1 >${2}_b
+    ui_print "$(printf "$MSG_FLASHED_B" "$base")"
+    ui_print " "
+  else
+    unzip -p "$ZIPF" $1 >$2
+    ui_print "$(printf "$MSG_FLASHED" "$base")"
+    ui_print " "
+  fi
+}
+
+# 6. 获取用户音量键选择。音量+ 返回0，音量- 返回1
+getVolumeKey() {
+  ui_print "$MSG_LISTEN_KEY"
+  key=$(getevent -qlc 1)
+  Up=$(echo $key | grep KEY_VOLUMEUP)
+  Down=$(echo $key | grep KEY_VOLUMEDOWN)
+  [ "$Up" != "" ] && return 0
+  [ "$Down" != "" ] && return 1
+}
+
+# 7. 获取设备型号
+device=$(getprop ro.product.device)
+
+# 8. 清理并重建 /tmp 临时目录
+[ -d /tmp ] && rm -rf /tmp
+mkdir -p /tmp
+
+# 9. 输出脚本启动信息
+ui_print "$MSG_SCRIPT_TITLE"
+ui_print "$MSG_POWERED_BY"
+
+# 10. 固定机型校验，如果不是指定型号则终止
+right_device="型号"
+if [ "$device" != "$right_device" ]; then
+  ui_print "$MSG_MODEL_ERROR"
+  ui_print "$(printf "$MSG_MODEL_ONLY" "$right_device" "$device")"
+  ui_print "$MSG_ABORT"
+  exit 1
+fi
+
+# 11. 询问用户是否要禁用模块，并执行禁用操作
+ui_print "$MSG_DISABLE_MODULES_Q"
+if getVolumeKey; then
+  ui_print "$MSG_DISABLE_MODULES_DO"
+  for module in $(ls -d /data/adb/modules/* 2>/dev/null); do
+    moduleName=$(basename $module)
+    ui_print "$(printf "$MSG_DISABLE_ONE" "$moduleName")"
+    touch $module/disable
+  done
+fi
+
+ui_print "$MSG_FLASH_START"
+
+# 12. 遍历所有 img 文件，根据镜像名直接刷写
+for file in $(unzip -l "$ZIPF" | awk '{print $4}' | grep '.img$'); do
+  base=$(basename $file .img)
+  if [ "$base" != "super" ] && [ "$base" != "cust" ]; then
+    unzip_and_flash_file "$file" "/dev/block/by-name/$base"
+  fi
+done
+
+# 13. 单独刷入 super 分区（如存在）
+if [ -b /dev/block/by-name/super ]; then
+  unzip_and_flash_file "images/super.img" "/dev/block/by-name/super"
+fi
+
+# 14. 单独刷入 cust 分区（如存在）
+if [ -b /dev/block/by-name/cust ]; then
+  unzip_and_flash_file "images/cust.img" "/dev/block/by-name/cust"
+fi
+
+# 15. 重新映射 super 镜像分区
+[ -e /dev/block/by-name/super ] && lptools unmap super && lptools map super
+
+# 16. 检测所有my开头的子分区名
+my_sub_partitions=$(unzip -l "$ZIPF" | awk '{print $4}' | grep '^images/my.*\.img$' | sed 's#images/##;s/\.img$//')
+
+# 17. 检查其它可能需要处理的分区名（如 system/odm/vendor等）
+extra_sub_partitions_list="odm odm_dlkm product system system_dlkm system_ext vendor vendor_dlkm mi_ext"
+extra_sub_partitions=""
+for part in $extra_sub_partitions_list; do
+  if unzip -l "$ZIPF" | awk '{print $4}' | grep -q "^images/${part}\.img$"; then
+    extra_sub_partitions="$extra_sub_partitions $part"
+  fi
+done
+
+# 18. 合并所有需重新 map 的分区名
+all_sub_partitions="$my_sub_partitions $extra_sub_partitions"
+
+# 19. 对于A/B分区，映射_a/_b，对非A/B直接映射
+for partition in $all_sub_partitions; do
+  if [ -n "$(getprop ro.boot.slot_suffix)" ]; then
+    [ -e /dev/block/mapper/${partition}_a ] && lptools unmap ${partition}_a && lptools map ${partition}_a
+    [ -e /dev/block/mapper/${partition}_b ] && lptools unmap ${partition}_b && lptools map ${partition}_b
+  else
+    [ -e /dev/block/mapper/${partition} ] && lptools unmap ${partition} && lptools map ${partition}
+  fi
+done
+
+# 20. 清理 Android 缓存
+ui_print "$MSG_CLEAN_CACHE"
+rm -rf /data/dalvik-cache/arm/*
+rm -rf /data/dalvik-cache/arm64/*
+rm -rf /data/system/package_cache/*
+
+ui_print "$MSG_DONE"
+exit 0

@@ -4,10 +4,15 @@ function extract_single_img {
 	local base_name="${single_file_name%.*}"
 	fs_type=$(recognize_file_type "$single_file")
 	start=$(python3 "$TOOL_DIR/get_right_time.py")
-	if [[ "$fs_type" == "ext" || "$fs_type" == "erofs" || "$fs_type" == "f2fs" || "$fs_type" == "boot" || "$fs_type" == "dtbo" || "$fs_type" == "recovery" || "$fs_type" == "vbmeta" || "$fs_type" == "vendor_boot" ]]; then
+
+	if [[ "$fs_type" == "ext" || "$fs_type" == "erofs" || "$fs_type" == "f2fs" ||
+		"$fs_type" == "boot" || "$fs_type" == "dtbo" || "$fs_type" == "recovery" ||
+		"$fs_type" == "vbmeta" || "$fs_type" == "vendor_boot" ]]; then
 		rm -rf "$WORK_DIR/$current_workspace/Extracted-files/$base_name"
 	fi
+
 	mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/config"
+
 	case "$fs_type" in
 	sparse)
 		echo "正在转换稀疏格式 ${single_file_name}，请稍等..."
@@ -29,6 +34,7 @@ function extract_single_img {
 		"$TOOL_DIR/7z" e -bb1 -aoa "$single_file" -o"$WORK_DIR/$current_workspace"
 		rm "$single_file"
 		mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/super"
+
 		for file in "$WORK_DIR/$current_workspace"/*; do
 			base_name=$(basename "$file")
 			if [[ ! -s $file ]] || [[ $base_name == *_b.img ]] || [[ $base_name == *_b ]] || [[ $base_name == *_b.ext ]]; then
@@ -41,6 +47,7 @@ function extract_single_img {
 				mv -f "$file" "${file%.ext}.img"
 			fi
 		done
+
 		if [ "$choice" = "all" ] && $allow_extract_all; then
 			matching_imgs=()
 			for img in "$WORK_DIR/$current_workspace"/*.img; do
@@ -49,11 +56,14 @@ function extract_single_img {
 					matching_imgs+=("$img")
 				fi
 			done
+
 			for img in "${matching_imgs[@]}"; do
 				img_name=$(basename "$img")
 				file_type=$(recognize_file_type "$img")
+
 				if [ "$file_type" != "unknown" ]; then
 					extract_single_img "$img" "$file_type"
+
 					if [ "$img" != "${matching_imgs[-1]}" ]; then
 						echo ""
 					fi
@@ -62,6 +72,7 @@ function extract_single_img {
 		else
 			echo "任务完成"
 		fi
+
 		return
 		;;
 	boot | dtbo | recovery | vendor_boot | vbmeta)
@@ -76,9 +87,6 @@ function extract_single_img {
 		;;
 	f2fs)
 		echo "正在提取分区 ${single_file_name}，请稍等..."
-		partition_size=$(stat -c%s "$single_file")
-		mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/config"
-		echo "$partition_size" >"$WORK_DIR/$current_workspace/Extracted-files/config/original_${base_name}_size_f2fs"
 		"$TOOL_DIR/extract.f2fs" "$single_file" -o "$WORK_DIR/$current_workspace/Extracted-files" >/dev/null 2>&1
 		echo "任务完成"
 		;;
@@ -106,6 +114,7 @@ function extract_single_img {
 		;;
 	zip)
 		file_list=$("$TOOL_DIR/7z" l "$single_file")
+
 		if echo "$file_list" | grep -q "payload.bin" && echo "$file_list" | grep -q "META-INF"; then
 			echo "检测到 Rom 刷入包 ${single_file_name}，请稍等..."
 			"$TOOL_DIR/7z" e -bb1 -aoa "$single_file" "payload.bin" -o"$WORK_DIR/$current_workspace"
@@ -140,19 +149,23 @@ function extract_single_img {
 		"$TOOL_DIR/7z" x "$single_file" -o"$WORK_DIR/$current_workspace" -xr'!meta-data'
 		rm -rf "$single_file"
 		echo "任务完成"
+
 		found_lz4=false
 		lz4_count=0
 		lz4_total=$(ls "$WORK_DIR/$current_workspace"/*.lz4 2>/dev/null | wc -l)
+
 		for lz4_file in "$WORK_DIR/$current_workspace"/*.lz4; do
 			if [ -f "$lz4_file" ]; then
 				extract_single_img "$lz4_file"
 				found_lz4=true
 				lz4_count=$((lz4_count + 1))
+
 				if [ "$lz4_count" -lt "$lz4_total" ]; then
 					echo ""
 				fi
 			fi
 		done
+
 		if [ "$found_lz4" = true ]; then
 			return
 		fi
@@ -167,6 +180,7 @@ function extract_single_img {
 		echo "未知的文件系统类型"
 		;;
 	esac
+
 	end=$(python3 "$TOOL_DIR/get_right_time.py")
 	runtime=$(echo "scale=3; if ($end - $start < 1) print 0; $end - $start" | bc)
 	echo "耗时 $runtime 秒"
@@ -205,9 +219,11 @@ function extract_img {
 					fi
 				fi
 			done
+
 			if $special_files_exist && $img_files_exist; then
 				allow_extract_all=false
 			fi
+
 			while true; do
 				echo -e "\n   当前工作域的文件：\n"
 				for i in "${!displayed_files[@]}"; do
@@ -230,6 +246,7 @@ function extract_img {
 				echo -n "   请选择提取选项，支持多选，空格分隔："
 				read -r choice
 				choice=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
+
 				if [[ "$choice" =~ ^[0-9\ ]+$ ]]; then
 					clear
 					selected_files=()
@@ -238,6 +255,7 @@ function extract_img {
 							selected_files+=("${displayed_files[$((num - 1))]}")
 						fi
 					done
+
 					if [ ${#selected_files[@]} -gt 0 ]; then
 						echo ""
 						for ((i = 0; i < ${#selected_files[@]}; i++)); do
@@ -254,6 +272,7 @@ function extract_img {
 					fi
 					continue
 				fi
+
 				case "$choice" in
 				"all")
 					if $allow_extract_all; then
@@ -284,14 +303,8 @@ function extract_img {
 					shopt -s nullglob
 					for file in "$WORK_DIR/$current_workspace"/*.{img,elf,melf,mbn,bin,fv,pit}; do
 						filename=$(basename "$file")
-						if [ -f "$WORK_DIR/$current_workspace/optics.img" ]; then
-							if [ "$filename" != "super.img" ] && [[ "$filename" != vbmeta*.img ]] && [[ "$filename" != "optics.img" ]] && ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
-								mv -f "$file" "$WORK_DIR/$current_workspace/Ready-to-flash/images/" 2>/dev/null
-							fi
-						else
-							if [ "$filename" != "super.img" ] && ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
-								mv -f "$file" "$WORK_DIR/$current_workspace/Ready-to-flash/images/" 2>/dev/null
-							fi
+						if [ "$filename" != "super.img" ] && ! [[ "$filename" =~ ^vbmeta.*.img$ ]] && [ "$filename" != "optics.img" ] && ! [[ "$filename" =~ ^($super_sub_partitions_list)$ ]]; then
+							mv -f "$file" "$WORK_DIR/$current_workspace/Ready-to-flash/images/" 2>/dev/null
 						fi
 					done
 					shopt -u nullglob

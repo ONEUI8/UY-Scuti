@@ -2,8 +2,11 @@ function rebuild_rom {
 	keep_clean
 	mkdir -p "$WORK_DIR/$current_workspace/Ready-to-flash/images"
 	while true; do
-		echo -e "\n   请把要刷入的分区文件放入在所选工作域目录的 Ready-to-flash/images 文件夹中"
-		echo -e "\n   [1] Fastboot(d) Rom    " "[2] Odin Rom    " "[Q] 返回上级菜单\n"
+		echo -e "\n   请把要刷入的分区文件放入在所选工作域的 Ready-to-flash/images 目录"
+		if compgen -G "$WORK_DIR/$current_workspace/Repacked/*.img" >/dev/null; then
+			echo -e "\n   提示：“轻松移动”可以将 Repacked 目录的文件快速移动到 Ready-to-flash/images 目录"
+		fi
+		echo -e "\n   [1] 线卡一体包    " "[2] Odin 包    " "[Q] 返回上级菜单\n"
 
 		# 检查是否有 img 文件
 		if compgen -G "$WORK_DIR/$current_workspace/Repacked/*.img" >/dev/null; then
@@ -38,7 +41,8 @@ function rebuild_rom {
 				echo -e "\n   不可能的型号，请重新输入。"
 			fi
 		done
-		sed "s/set \"right_device=\w*\"/set \"right_device=$device_model\"/g" "$TOOL_DIR/flash_tool/FlashROM.bat" >"$TOOL_DIR/flash_tool/StartFlash.bat"
+		sed -i "s/set \"right_device=.*\"/set \"right_device=$device_model\"/g" "$TOOL_DIR/flash_tool/FlashROM.bat"
+		sed -i "s/right_device=\".*\"/right_device=\"$device_model\"/g" "$TOOL_DIR/flash_tool/META-INF/com/google/android/update-binary"
 		clear
 		while true; do
 			echo -e "\n   [1] 分卷压缩    " "[2] 完全压缩    " "[Q] 返回上级菜单\n"
@@ -72,8 +76,12 @@ function rebuild_rom {
 			start=$(python3 "$TOOL_DIR/get_right_time.py")
 			echo -e "\n开始打包..."
 			find "$WORK_DIR/$current_workspace/Ready-to-flash" -mindepth 1 -maxdepth 1 -not -name 'images' -exec rm -rf {} +
-			"$TOOL_DIR/7z" a -tzip -v${volume_size} "$WORK_DIR/$current_workspace/Ready-to-flash/${current_workspace}.zip" "$TOOL_DIR/flash_tool/bin" "$TOOL_DIR/flash_tool/StartFlash.bat" "$WORK_DIR/$current_workspace/Ready-to-flash/images" -y -mx1
-			echo -e "Fastboot(d) Rom 打包完成"
+			"$TOOL_DIR/7z" a -tzip -v${volume_size} "$WORK_DIR/$current_workspace/Ready-to-flash/${current_workspace}.zip" \
+				"$TOOL_DIR/flash_tool/bin" \
+				"$TOOL_DIR/flash_tool/FlashROM.bat" \
+				"$TOOL_DIR/flash_tool/META-INF" \
+				"$WORK_DIR/$current_workspace/Ready-to-flash/images" -y -mx1
+			echo -e "线卡一体包打包完成"
 			end=$(python3 "$TOOL_DIR/get_right_time.py")
 			runtime=$(echo "scale=3; if ($end - $start < 1) print 0; $end - $start" | bc)
 			echo "耗时 $runtime 秒"
@@ -82,8 +90,12 @@ function rebuild_rom {
 			clear
 			echo -e "\n开始打包..."
 			find "$WORK_DIR/$current_workspace/Ready-to-flash" -mindepth 1 -maxdepth 1 -not -name 'images' -exec rm -rf {} +
-			"$TOOL_DIR/7z" a -tzip "$WORK_DIR/$current_workspace/Ready-to-flash/${current_workspace}.zip" "$TOOL_DIR/flash_tool/bin" "$TOOL_DIR/flash_tool/StartFlash.bat" "$WORK_DIR/$current_workspace/Ready-to-flash/images" -y -mx1
-			echo -e "Fastboot(d) Rom 打包完成"
+			"$TOOL_DIR/7z" a -tzip "$WORK_DIR/$current_workspace/Ready-to-flash/${current_workspace}.zip" \
+				"$TOOL_DIR/flash_tool/bin" \
+				"$TOOL_DIR/flash_tool/FlashROM.bat" \
+				"$TOOL_DIR/flash_tool/META-INF" \
+				"$WORK_DIR/$current_workspace/Ready-to-flash/images" -y -mx1
+			echo -e "线卡一体包打包完成"
 			end=$(python3 "$TOOL_DIR/get_right_time.py")
 			runtime=$(echo "scale=3; if ($end - $start < 1) print 0; $end - $start" | bc)
 			echo "耗时 $runtime 秒"
@@ -139,7 +151,7 @@ function rebuild_rom {
 			retain_data_choice="2"
 		fi
 		clear
-		echo -e "\n开始打包 Odin Rom..."
+		echo -e "\n开始打包 Odin 包..."
 		# 检查并添加文件到 AP_FILES 数组
 		while IFS= read -r -d '' file; do
 			AP_FILES+=("$(basename "$file")")
@@ -185,7 +197,7 @@ function rebuild_rom {
 		if [[ ${#CSC_FILES[@]} -gt 0 ]]; then
 			"$TOOL_DIR/7z" a -ttar -mx1 "$WORK_DIR/$current_workspace/Ready-to-flash/CSC-${current_workspace}.tar" "${CSC_FILES[@]/#/$BASE_PATH/}"
 		fi
-		echo -e "Odin Rom 打包完成"
+		echo -e "Odin 包打包完成"
 		end=$(python3 "$TOOL_DIR/get_right_time.py")
 		runtime=$(echo "scale=3; if ($end - $start < 1) print 0; $end - $start" | bc)
 		echo "耗时 $runtime 秒"
