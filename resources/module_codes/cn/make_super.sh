@@ -19,17 +19,7 @@ function create_super_img {
 		total_size=$((total_size + 4096 - remainder))
 	fi
 	local extra_space=$((1024 * 1024 * 1024 / 8))
-	case "$partition_type" in
-	"VAB")
-		total_size=$((total_size + extra_space))
-		;;
-	"AB")
-		total_size=$(((total_size + extra_space) * 2))
-		;;
-	"OnlyA")
-		total_size=$((total_size + extra_space))
-		;;
-	esac
+	local total_size=$((total_size + extra_space))
 	clear
 	while true; do
 		local original_super_size=$(cat "$WORK_DIR/$current_workspace/Extracted-files/config/original_super_size" 2>/dev/null)
@@ -111,7 +101,7 @@ function create_super_img {
 	local group_name_a="${group_name}_a"
 	local group_name_b="${group_name}_b"
 	case "$partition_type" in
-	"AB" | "VAB")
+	"(V)AB")
 		metadata_slots="3"
 		;;
 	*)
@@ -125,20 +115,13 @@ function create_super_img {
 		;;
 	esac
 	case "$partition_type" in
-	"VAB")
-		overhead_adjusted_size=$((device_size - 10 * 1024 * 1024))
-		params+=" --group \"$group_name_a:$overhead_adjusted_size\""
-		params+=" --group \"$group_name_b:$overhead_adjusted_size\""
+	"(V)AB")
+		params+=" --group \"$group_name_a:$device_size\""
+		params+=" --group \"$group_name_b:$device_size\""
 		params+=" --virtual-ab"
 		;;
-	"AB")
-		overhead_adjusted_size=$(((device_size / 2) - 10 * 1024 * 1024))
-		params+=" --group \"$group_name_a:$overhead_adjusted_size\""
-		params+=" --group \"$group_name_b:$overhead_adjusted_size\""
-		;;
 	*)
-		overhead_adjusted_size=$((device_size - 10 * 1024 * 1024))
-		params+=" --group \"$group_name:$overhead_adjusted_size\""
+		params+=" --group \"$group_name:$device_size\""
 		;;
 	esac
 	for img_file in "${img_files[@]}"; do
@@ -152,16 +135,10 @@ function create_super_img {
 			local read_write_attr="readonly"
 		fi
 		case "$partition_type" in
-		"VAB")
+		"(V)AB")
 			params+=" --partition \"${partition_name}_a:$read_write_attr:$partition_size:$group_name_a\""
 			params+=" --image \"${partition_name}_a=$img_file\""
 			params+=" --partition \"${partition_name}_b:$read_write_attr:0:$group_name_b\""
-			;;
-		"AB")
-			params+=" --partition \"${partition_name}_a:$read_write_attr:$partition_size:$group_name_a\""
-			params+=" --image \"${partition_name}_a=$img_file\""
-			params+=" --partition \"${partition_name}_b:$read_write_attr:$partition_size:$group_name_b\""
-			params+=" --image \"${partition_name}_b=$img_file\""
 			;;
 		*)
 			params+=" --partition \"$partition_name:$read_write_attr:$partition_size:$group_name\""
@@ -200,7 +177,6 @@ function create_super_img {
 	echo -n "按任意键返回上级菜单..."
 	read -n 1
 }
-
 function package_super_image {
 	keep_clean
 	mkdir -p "$WORK_DIR/$current_workspace/Extracted-files/super"
@@ -284,7 +260,7 @@ function package_super_image {
 		case "$is_pack" in
 		y)
 			while true; do
-				echo -e "\n   [1] OnlyA 动态分区   [2] AB 动态分区   [3] VAB 动态分区\n"
+				echo -e "\n   [1] OnlyA 动态分区   [2] (V)AB 动态分区\n"
 				echo -e "   [Q] 返回上级菜单\n"
 				echo -n "   请选择你的分区类型："
 				read partition_type
@@ -295,7 +271,30 @@ function package_super_image {
 				fi
 				clear
 				case "$partition_type" in
-				1 | 2 | 3)
+				1)
+					while true; do
+						echo -e "\n   [1] 稀疏   [2] 非稀疏\n"
+						echo -e "   [Q] 返回上级菜单\n"
+						echo -n "   请选择打包方式："
+						read is_sparse
+						is_sparse=$(echo "$is_sparse" | tr '[:upper:]' '[:lower:]')
+						if [ "$is_sparse" = "q" ]; then
+							echo "   已取消选择，返回工作域菜单。"
+							return
+						fi
+						case "$is_sparse" in
+						1 | 2)
+							break
+							;;
+						*)
+							clear
+							echo -e "\n   无效的选择，请重新输入。"
+							;;
+						esac
+					done
+					break
+					;;
+				2)
 					while true; do
 						echo -e "\n   [1] 稀疏   [2] 非稀疏\n"
 						echo -e "   [Q] 返回上级菜单\n"
@@ -344,16 +343,10 @@ function package_super_image {
 		create_super_img "OnlyA" "no"
 		;;
 	2-1)
-		create_super_img "AB" "yes"
+		create_super_img "(V)AB" "yes"
 		;;
 	2-2)
-		create_super_img "AB" "no"
-		;;
-	3-1)
-		create_super_img "VAB" "yes"
-		;;
-	3-2)
-		create_super_img "VAB" "no"
+		create_super_img "(V)AB" "no"
 		;;
 	*)
 		echo "   无效的选择，请重新输入。"
