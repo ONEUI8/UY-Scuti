@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '13.5'  # Updated version number
+  VERSION: '13.6'  # Updated version number to 13.6
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -45,6 +45,7 @@ jobs:
             9. 现在无论什么情况，简易识别都会识别 optics.img 以及 vbmeta 相关的 img。
             10. 新增卡刷脚本，你应该自行测试其是否可用。
             11. fs 配置文件，现在被删除文件的内容会被移除。
+            12. 修复 AB 分区打包方式，之前的打包方式是不正确的。
 
             ## Release Notes
 
@@ -59,6 +60,7 @@ jobs:
             9. Now, under all circumstances, simple recognition will identify optics.img and vbmeta-related imgs.
             10. Added recovery flash script; you should test its usability yourself.
             11. In the fs configuration file, the contents of deleted files will now be removed.
+            12. Fixed the AB partition packaging method; the previous packaging method was incorrect.
 
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .
@@ -73,4 +75,3 @@ jobs:
           asset_path: ./UY-Sct_${{ env.VERSION }}.zip
           asset_name: UY-Sct_${{ env.VERSION }}.zip
           asset_content_type: application/zip
-
