@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 env: 
-  VERSION: '13.6'  # Updated version number to 13.6
+  VERSION: '14.0.0'  # Updated version number to 14.0.0
 jobs: 
   build: 
     runs-on: ubuntu-latest
@@ -34,33 +34,13 @@ jobs:
           body: |
             ## 更新内容
 
-            1. 分区打包已支持多选，现在无论是提取分区，还是打包分区，都可以多选了。  
-            2. super 打包移除固定值，现在总是动态计算或是保持原大小。  
-            3. 全局 Deodex 功能已恢复。  
-            4. 快速替换目录调整到根目录下，这样修改更加快速。  
-            5. 提示：ONEUI 特性添加已经移除，现在变成更直观的修改选项。  
-            6. ColorOS 已添加较多精简列表应用。  
-            7. 教程再次更新。
-            8. bat 刷入脚本再次修复。
-            9. 现在无论什么情况，简易识别都会识别 optics.img 以及 vbmeta 相关的 img。
-            10. 新增卡刷脚本，你应该自行测试其是否可用。
-            11. fs 配置文件，现在被删除文件的内容会被移除。
-            12. 修复 SUPER AB 分区打包方式，之前的打包方式是不正确的。
+            1. **F2FS 分区打包优化**: 回归到更合理的动态大小计算方式（目录大小的 1.05 倍 + 55MB 额外空间），以避免因空间不足导致的打包失败。
+            2. **EXT4 分区解包**: 移除了对 `debugfs` 的依赖，转而使用纯 Python 实现，现在解包不再需要 ROOT 权限。
 
             ## Release Notes
 
-            1. Partition packaging now supports multi-selection; whether extracting or packaging partitions, multiple selections are supported.  
-            2. Fixed values removed from super packaging; it now always dynamically calculates or retains the original size.  
-            3. Global Deodex functionality has been restored.  
-            4. The quick replace directory has been moved to the root directory for faster modifications.  
-            5. Note: ONEUI feature additions have been removed and replaced with more intuitive modification options.  
-            6. Many streamlined list apps have been added to ColorOS.  
-            7. Tutorial updated again.
-            8. bat flashing script fixed again.
-            9. Now, under all circumstances, simple recognition will identify optics.img and vbmeta-related imgs.
-            10. Added recovery flash script; you should test its usability yourself.
-            11. In the fs configuration file, the contents of deleted files will now be removed.
-            12. Fixed the SUPER  AB partition packaging method; the previous packaging method was incorrect.
+            1. **F2FS Partition Packaging Optimization**: Reverted to a more reasonable dynamic size calculation method (1.05 times the directory size + 55MB extra space) to avoid packaging failures due to insufficient space.
+            2. **EXT4 Partition Unpacking**: Removed the dependency on `debugfs` and switched to a pure Python implementation. Unpacking no longer requires ROOT permissions.
 
       - name: Archive project
         run: zip -r UY-Sct_${{ env.VERSION }}.zip .
